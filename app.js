@@ -180,7 +180,7 @@ class ChessApp {
         e.preventDefault();
         
         // Do not allow dragging if the game is over
-        if (this.game.isGameOver()) return;
+        if (this.game.game_over()) return;
         
         this.draggingPiece = pEl;
         this.dragStartSquare = pEl.dataset.square;
