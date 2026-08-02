@@ -33,6 +33,8 @@ class ChessApp {
         this.playAs = 'w';
         this.lastRenderTime = 0;
         
+        this.selectedSquare = null; // New state for tap-to-move
+        
         this.engine = new Engine();
         this.engine.setStyle(document.getElementById('style-select').value);
         
@@ -64,6 +66,19 @@ class ChessApp {
                 <marker id="arrowhead-5" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0, 6 3, 0 6" fill="var(--c5)"/></marker>
             </defs>
         `;
+        
+        // Add listeners to empty squares for tap-to-move
+        const squares = this.squaresLayer.querySelectorAll('.square');
+        squares.forEach(sq => {
+            sq.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this.handleSquareClick(sq.dataset.square);
+            });
+            sq.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.handleSquareClick(sq.dataset.square);
+            }, {passive: false});
+        });
     }
 
     getSquareCoords(sq) {
@@ -139,6 +154,22 @@ class ChessApp {
             }
         }
         
+        // Highlight selected square and draw legal moves
+        if (this.selectedSquare) {
+            const sqEl = this.squaresLayer.querySelector(`.square[data-square="${this.selectedSquare}"]`);
+            if (sqEl) sqEl.classList.add('selected');
+            
+            const legalMoves = this.game.moves({ square: this.selectedSquare, verbose: true });
+            legalMoves.forEach(m => {
+                const targetSq = this.squaresLayer.querySelector(`.square[data-square="${m.to}"]`);
+                if (targetSq) {
+                    const dot = document.createElement('div');
+                    dot.className = 'move-indicator';
+                    targetSq.appendChild(dot);
+                }
+            });
+        }
+        
         document.getElementById('play-w').checked = (this.playAs === 'w');
         document.getElementById('play-b').checked = (this.playAs === 'b');
         
@@ -147,8 +178,13 @@ class ChessApp {
     
     onPieceDragStart(e, pEl) {
         e.preventDefault();
+        
+        // Do not allow dragging if the game is over
+        if (this.game.isGameOver()) return;
+        
         this.draggingPiece = pEl;
         this.dragStartSquare = pEl.dataset.square;
+        this.dragHasMoved = false;
         pEl.classList.add('dragging');
         this.clearArrows();
         
@@ -181,7 +217,13 @@ class ChessApp {
         const dx = clientX - this.dragStartX;
         const dy = clientY - this.dragStartY;
         
-        this.draggingPiece.style.transform = `translate(${dx}px, ${dy}px) scale(1.1)`;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            this.dragHasMoved = true;
+        }
+        
+        if (this.dragHasMoved) {
+            this.draggingPiece.style.transform = `translate(${dx}px, ${dy}px) scale(1.1)`;
+        }
     }
     
     onPieceDragEnd(e) {
@@ -206,6 +248,13 @@ class ChessApp {
             }
             const targetSquare = FILES[fileIdx] + RANKS[rankIdx];
             
+            if (!this.dragHasMoved) {
+                // It was a tap!
+                this.draggingPiece = null;
+                this.handleSquareClick(this.dragStartSquare);
+                return;
+            }
+            
             // Attempt move
             const move = this.game.move({
                 from: this.dragStartSquare,
@@ -214,16 +263,55 @@ class ChessApp {
             });
             
             if (move) {
+                this.selectedSquare = null;
                 this.updateBoard();
             } else {
                 this.updateBoard(); // snap back
             }
         } else {
+            if (!this.dragHasMoved) {
+                this.draggingPiece = null;
+                this.handleSquareClick(this.dragStartSquare);
+                return;
+            }
             this.updateBoard(); // snap back
         }
         
         this.draggingPiece = null;
         this.dragStartSquare = null;
+    }
+    
+    handleSquareClick(square) {
+        if (!this.selectedSquare) {
+            // Select piece if it's ours
+            const piece = this.game.get(square);
+            // Only select if it's the current player's turn (or allow selecting any own piece)
+            if (piece) {
+                this.selectedSquare = square;
+                this.updateBoard();
+            }
+        } else {
+            // Attempt to move
+            const move = this.game.move({
+                from: this.selectedSquare,
+                to: square,
+                promotion: 'q'
+            });
+            if (move) {
+                this.selectedSquare = null;
+                this.updateBoard();
+            } else {
+                // If clicked another piece, select it instead
+                const piece = this.game.get(square);
+                if (piece) {
+                    this.selectedSquare = square;
+                    this.updateBoard();
+                } else {
+                    this.selectedSquare = null;
+                    this.updateBoard();
+                }
+            }
+        }
     }
 
     bindEvents() {
