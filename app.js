@@ -450,6 +450,13 @@ class ChessApp {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             
             const key = e.key.toLowerCase();
+            
+            // Calculate shortcut
+            if (key === 'c') {
+                this.triggerAnalysis();
+                return;
+            }
+            
             let moveIndex = -1;
             if (key === 'a') moveIndex = 0;
             else if (key === 'z') moveIndex = 1;
