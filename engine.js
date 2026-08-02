@@ -20,11 +20,18 @@ class Engine {
         
         this.currentEngine = engineName;
         
+        let workerScript = 'stockfish11.js';
         if (engineName === 'stockfish') {
-            this.worker = new Worker('stockfish11.js');
+            workerScript = 'stockfish11.js';
         } else if (engineName === 'komodo') {
-            this.worker = new Worker('komodo.js');
+            workerScript = 'komodo.js';
+        } else if (engineName === 'lozza') {
+            workerScript = 'lozza.js';
+        } else if (engineName === 'wukong') {
+            workerScript = 'wukong.js';
         }
+        
+        this.worker = new Worker(workerScript);
         
         this.worker.onmessage = this.onMessage.bind(this);
         this.init();

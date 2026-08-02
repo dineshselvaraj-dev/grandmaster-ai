@@ -480,12 +480,44 @@ class ChessApp {
         document.getElementById('play-w').onchange = () => { this.playAs = 'w'; this.clearArrows(); };
         document.getElementById('play-b').onchange = () => { this.playAs = 'b'; this.clearArrows(); };
         
-        const engineSel = document.getElementById('engine-select');
-        engineSel.onchange = () => {
-            this.engine.loadEngine(engineSel.value);
+        
+        document.getElementById('engine-select').addEventListener('change', (e) => {
+            this.engine.loadEngine(e.target.value);
             this.engine.setStyle(document.getElementById('style-select').value);
             this.clearArrows();
-        };
+            
+            // Adjust UI based on engine
+            const engine = e.target.value;
+            const settingsDiv = document.getElementById('engine-advanced-settings');
+            
+            if (engine === 'lozza' || engine === 'wukong') {
+                document.getElementById('lines').value = 1;
+                document.getElementById('linesValue').innerText = 1;
+                document.getElementById('lines').disabled = true;
+            } else {
+                document.getElementById('lines').disabled = false;
+            }
+            
+            if (engine === 'maia3') {
+                document.getElementById('depth').value = 1;
+                document.getElementById('depthValue').innerText = 1;
+                document.getElementById('depth').disabled = true;
+            } else {
+                document.getElementById('depth').disabled = false;
+            }
+        });
+        
+        // Connect Sliders
+        const sliders = ['elo', 'depth', 'lines'];
+        sliders.forEach(id => {
+            const el = document.getElementById(id);
+            const valEl = document.getElementById(id + 'Value');
+            if (el && valEl) {
+                el.addEventListener('input', (e) => {
+                    valEl.innerText = e.target.value;
+                });
+            }
+        });
 
         const styleSel = document.getElementById('style-select');
         styleSel.onchange = () => {
@@ -550,9 +582,20 @@ class ChessApp {
         this.clearArrows();
         document.getElementById('best-moves-list').innerHTML = `<div style="color: #a1a1aa; font-style: italic; padding: 20px;">Analyzing...</div>`;
         
-        const depth = parseInt(document.getElementById('depth-slider').value);
-        const multipv = parseInt(document.getElementById('arrow-count').value);
+        const depth = parseInt(document.getElementById('depth').value) || 15;
+        const multipv = parseInt(document.getElementById('lines').value) || 1;
+        const elo = parseInt(document.getElementById('elo').value) || 1500;
         
+        // Update engine settings dynamically based on sliders
+        this.engine.setOption('MultiPV', multipv);
+        // Note: Different engines handle strength/ELO differently. 
+        // For Stockfish: Skill Level (0-20). For Komodo/others: UCI_LimitStrength and UCI_Elo
+        this.engine.setOption('UCI_LimitStrength', 'true');
+        this.engine.setOption('UCI_Elo', elo);
+        // For standard Stockfish which uses Skill Level: mapping Elo ~600 to 2600 to 0-20
+        let skillLevel = Math.max(0, Math.min(20, Math.floor((elo - 600) / 100)));
+        this.engine.setOption('Skill Level', skillLevel);
+
         const startTime = Date.now();
         // Start engine analysis
         const analysisPromise = this.engine.analyze(this.game.fen(), depth, multipv);
@@ -656,7 +699,8 @@ class ChessApp {
             svg.style.setProperty(`--c${i+1}`, colors[i] || colors[2]);
         }
         
-        const lines = this.engineLines.slice(0, parseInt(document.getElementById('arrow-count').value));
+        const maxLines = parseInt(document.getElementById('lines').value) || 1;
+        const lines = this.engineLines.slice(0, maxLines);
         
         // Use viewBox 0 0 100 100 to map coordinates
         svg.setAttribute('viewBox', '0 0 100 100');

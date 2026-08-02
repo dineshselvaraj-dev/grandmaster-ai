@@ -52,11 +52,30 @@
                     <div class="setting-row">
                         <label>Engine:</label>
                         <select id="engine-select">
-                            <option value="stockfish">Stockfish 16 (Max Strength)</option>
+                            <option value="stockfish">Stockfish 16.1 (Max Strength)</option>
                             <option value="komodo">Komodo (Human-like)</option>
+                            <option value="maia3">Maia3 (Neural Net Human Elos)</option>
+                            <option value="lozza">Lozza</option>
+                            <option value="wukong">Wukong</option>
                         </select>
                     </div>
-                    <div class="setting-row">
+                    
+                    <div id="engine-advanced-settings" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <div class="setting-row">
+                            <label>ELO: <span id="eloValue">1500</span></label>
+                            <input type="range" id="elo" min="600" max="2600" step="100" value="1500" style="width: 120px;">
+                        </div>
+                        <div class="setting-row">
+                            <label>Depth: <span id="depthValue">15</span></label>
+                            <input type="range" id="depth" min="1" max="25" step="1" value="15" style="width: 120px;">
+                        </div>
+                        <div class="setting-row">
+                            <label>Lines: <span id="linesValue">1</span></label>
+                            <input type="range" id="lines" min="1" max="5" step="1" value="1" style="width: 120px;">
+                        </div>
+                    </div>
+                    
+                    <div class="setting-row" style="margin-top: 15px;">
                         <label>Style:</label>
                         <select id="style-select">
                             <option value="Default">Default</option>
