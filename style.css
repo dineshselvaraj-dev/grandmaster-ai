@@ -349,3 +349,9 @@ h3 { margin-bottom: 15px; font-weight: 600; color: #fff; }
     margin: 37.5%;
     pointer-events: none;
 }
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.promo-btn:hover { background: rgba(251, 191, 36, 0.4) !important; border-color: var(--accent) !important; }

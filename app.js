@@ -35,6 +35,13 @@ class ChessApp {
         
         this.selectedSquare = null; // New state for tap-to-move
         
+        this.sounds = {
+            move: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3'),
+            capture: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3'),
+            check: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3'),
+            gameEnd: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3')
+        };
+        
         this.engine = new Engine();
         this.engine.setStyle(document.getElementById('style-select').value);
         
@@ -259,16 +266,8 @@ class ChessApp {
             }
             
             // Attempt move
-            const move = this.game.move({
-                from: this.dragStartSquare,
-                to: targetSquare,
-                promotion: 'q' // auto promote to queen for simplicity
-            });
-            
-            if (move) {
-                this.selectedSquare = null;
-                this.updateBoard();
-            } else {
+            const success = this.executeMove(this.dragStartSquare, targetSquare);
+            if (!success) {
                 this.updateBoard(); // snap back
             }
         } else {
@@ -284,27 +283,102 @@ class ChessApp {
         this.dragStartSquare = null;
     }
     
+    showPromotionModal(callback) {
+        const modal = document.getElementById('promotion-modal');
+        modal.style.display = 'flex';
+        
+        const optionsContainer = modal.querySelector('.promo-options');
+        const clickHandler = (e) => {
+            const btn = e.target.closest('.promo-btn');
+            if (btn) {
+                optionsContainer.removeEventListener('click', clickHandler);
+                modal.style.display = 'none';
+                callback(btn.dataset.piece);
+            }
+        };
+        optionsContainer.addEventListener('click', clickHandler);
+    }
+    
+    playSound(move) {
+        if (this.game.game_over()) {
+            this.sounds.gameEnd.play().catch(e=>e);
+        } else if (this.game.in_check()) {
+            this.sounds.check.play().catch(e=>e);
+        } else if (move.captured) {
+            this.sounds.capture.play().catch(e=>e);
+        } else {
+            this.sounds.move.play().catch(e=>e);
+        }
+    }
+    
+    checkAutoPlay() {
+        const isAutoPlay = document.getElementById('play-vs-ai').checked;
+        if (isAutoPlay && !this.game.game_over() && this.game.turn() !== this.playAs) {
+            this.playEngineMove();
+        }
+    }
+    
+    async playEngineMove() {
+        document.getElementById('best-moves-list').innerHTML = `<div style="color: #a1a1aa; font-style: italic; padding: 20px;">AI is thinking...</div>`;
+        const depth = parseInt(document.getElementById('depth-slider').value) || 15;
+        const lines = await this.engine.analyze(this.game.fen(), depth, 1);
+        if (lines.length > 0) {
+            const bestMoveUci = lines[0].pv.split(' ')[0];
+            const from = bestMoveUci.substring(0, 2);
+            const to = bestMoveUci.substring(2, 4);
+            const promotion = bestMoveUci.length > 4 ? bestMoveUci[4] : undefined;
+            
+            const move = this.game.move({ from, to, promotion });
+            if (move) {
+                this.updateBoard();
+                this.playSound(move);
+                this.clearArrows();
+                document.getElementById('best-moves-list').innerHTML = `<div style="color: #a1a1aa; font-style: italic; padding: 20px;">AI played ${move.san}</div>`;
+            }
+        }
+    }
+    
+    executeMove(from, to, promotion = null) {
+        // Check if it's a pawn promotion move
+        const piece = this.game.get(from);
+        if (piece && piece.type === 'p' && (to[1] === '1' || to[1] === '8') && !promotion) {
+            const moves = this.game.moves({verbose: true});
+            const valid = moves.find(m => m.from === from && m.to === to);
+            if (!valid) return false;
+
+            this.showPromotionModal((choice) => {
+                const move = this.game.move({ from, to, promotion: choice });
+                if (move) {
+                    this.selectedSquare = null;
+                    this.updateBoard();
+                    this.playSound(move);
+                    this.checkAutoPlay();
+                }
+            });
+            return true;
+        }
+
+        const move = this.game.move({ from, to, promotion: promotion || 'q' });
+        if (move) {
+            this.selectedSquare = null;
+            this.updateBoard();
+            this.playSound(move);
+            this.checkAutoPlay();
+            return true;
+        }
+        return false;
+    }
+    
     handleSquareClick(square) {
         if (!this.selectedSquare) {
-            // Select piece if it's ours
             const piece = this.game.get(square);
-            // Only select if it's the current player's turn (or allow selecting any own piece)
             if (piece) {
                 this.selectedSquare = square;
                 this.updateBoard();
             }
         } else {
-            // Attempt to move
-            const move = this.game.move({
-                from: this.selectedSquare,
-                to: square,
-                promotion: 'q'
-            });
-            if (move) {
-                this.selectedSquare = null;
-                this.updateBoard();
-            } else {
-                // If clicked another piece, select it instead
+            const success = this.executeMove(this.selectedSquare, square);
+            if (!success) {
                 const piece = this.game.get(square);
                 if (piece) {
                     this.selectedSquare = square;
@@ -318,10 +392,19 @@ class ChessApp {
     }
 
     bindEvents() {
+        document.getElementById('btn-export-pgn').onclick = () => {
+            navigator.clipboard.writeText(this.game.pgn());
+            const btn = document.getElementById('btn-export-pgn');
+            const orig = btn.innerText;
+            btn.innerText = '✅ Copied!';
+            setTimeout(() => btn.innerText = orig, 2000);
+        };
+        
         document.getElementById('btn-new').onclick = () => {
             this.game.reset();
             this.updateBoard();
             this.clearArrows();
+            this.checkAutoPlay();
         };
         
         document.getElementById('btn-flip').onclick = () => {
