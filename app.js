@@ -132,12 +132,22 @@ class ChessApp {
             const coords = this.getSquareCoords(sq.dataset.square);
             sq.style.left = `${coords.file * 12.5}%`;
             sq.style.top = `${coords.rank * 12.5}%`;
-            sq.classList.remove('in-check', 'in-checkmate', 'selected');
+            sq.classList.remove('in-check', 'in-checkmate', 'selected', 'highlight');
             
             // clear old move indicators
             const dot = sq.querySelector('.move-indicator');
             if (dot) dot.remove();
         });
+        
+        // Highlight last move
+        const history = this.game.history({ verbose: true });
+        if (history.length > 0) {
+            const lastMove = history[history.length - 1];
+            const fromSq = this.squaresLayer.querySelector(`.square[data-square="${lastMove.from}"]`);
+            const toSq = this.squaresLayer.querySelector(`.square[data-square="${lastMove.to}"]`);
+            if (fromSq) fromSq.classList.add('highlight');
+            if (toSq) toSq.classList.add('highlight');
+        }
         
         if (this.game.in_check() || this.game.in_checkmate()) {
             const turn = this.game.turn();
