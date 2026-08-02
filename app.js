@@ -446,6 +446,31 @@ class ChessApp {
     }
 
     bindEvents() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            const key = e.key.toLowerCase();
+            let moveIndex = -1;
+            if (key === 'a') moveIndex = 0;
+            else if (key === 'z') moveIndex = 1;
+            else if (key === 'x') moveIndex = 2;
+            
+            if (moveIndex !== -1 && this.engineLines && this.engineLines.length > moveIndex) {
+                const bestMoveUci = this.engineLines[moveIndex].pv.split(' ')[0];
+                const from = bestMoveUci.substring(0, 2);
+                const to = bestMoveUci.substring(2, 4);
+                const promotion = bestMoveUci.length > 4 ? bestMoveUci[4] : 'q';
+                
+                const move = this.game.move({ from, to, promotion });
+                if (move) {
+                    this.updateBoard();
+                    this.playSound(move);
+                    this.clearArrows();
+                    document.getElementById('best-moves-list').innerHTML = `<div style="color: #a1a1aa; font-style: italic; padding: 20px;">Shortcut used: played ${move.san}</div>`;
+                }
+            }
+        });
+
         document.getElementById('btn-export-pgn').onclick = () => {
             navigator.clipboard.writeText(this.game.pgn());
             const btn = document.getElementById('btn-export-pgn');
