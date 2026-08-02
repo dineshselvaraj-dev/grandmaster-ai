@@ -53,11 +53,12 @@ class Engine {
         this.send(`setoption name ${name} value ${value}`);
     }
     
-    setStyle(style) {
+    setStyle(style, elo = 1500) {
         this.currentStyle = style;
+        this.currentElo = elo;
     }
     
-    applyStyle(style) {
+    applyStyle(style, elo = 1500) {
         if (!style) style = 'Default';
         const styles = {
             'Default': { 'Contempt': 0, 'Skill Level': 20, 'Personality': 'Default' },
@@ -71,15 +72,24 @@ class Engine {
         };
         const s = styles[style] || styles['Default'];
         
+        let skillLevel = Math.max(0, Math.min(20, Math.floor((elo - 600) / 100)));
+        
         if (this.currentEngine === 'stockfish') {
             if (s['Contempt'] !== undefined) this.setOption('Contempt', s['Contempt']);
-            if (s['Skill Level'] !== undefined) this.setOption('Skill Level', s['Skill Level']);
+            
+            if (style === 'Beginner' || style === 'Human') {
+                this.setOption('UCI_LimitStrength', 'true');
+                this.setOption('UCI_Elo', elo);
+                this.setOption('Skill Level', skillLevel);
+            } else {
+                this.setOption('UCI_LimitStrength', 'false');
+                this.setOption('Skill Level', 20);
+            }
         } else if (this.currentEngine === 'komodo') {
             if (s['Personality']) this.setOption('Personality', s['Personality']);
             
             if (style === 'Beginner' || style === 'Human') {
                 this.send('setoption name UCI_LimitStrength value true');
-                let elo = style === 'Beginner' ? 800 : 1500;
                 this.send(`setoption name UCI_Elo value ${elo}`);
             } else {
                 this.send('setoption name UCI_LimitStrength value false');
@@ -147,7 +157,7 @@ class Engine {
             this.analysisResolve = resolve;
             
             this.send('isready');
-            this.applyStyle(this.currentStyle);
+            this.applyStyle(this.currentStyle, this.currentElo);
             
             this.send(`position fen ${fen}`);
             // Use the depth slider directly, let the engine emit bestmove naturally

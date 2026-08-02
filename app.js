@@ -617,16 +617,11 @@ class ChessApp {
         const depth = parseInt(document.getElementById('depth').value) || 15;
         const multipv = parseInt(document.getElementById('lines').value) || 1;
         const elo = parseInt(document.getElementById('elo').value) || 1500;
+        const style = document.getElementById('style-select').value;
         
         // Update engine settings dynamically based on sliders
         this.engine.setOption('MultiPV', multipv);
-        // Note: Different engines handle strength/ELO differently. 
-        // For Stockfish: Skill Level (0-20). For Komodo/others: UCI_LimitStrength and UCI_Elo
-        this.engine.setOption('UCI_LimitStrength', 'true');
-        this.engine.setOption('UCI_Elo', elo);
-        // For standard Stockfish which uses Skill Level: mapping Elo ~600 to 2600 to 0-20
-        let skillLevel = Math.max(0, Math.min(20, Math.floor((elo - 600) / 100)));
-        this.engine.setOption('Skill Level', skillLevel);
+        this.engine.setStyle(style, elo);
 
         const startTime = Date.now();
         // Start engine analysis
