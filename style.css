@@ -184,7 +184,7 @@ h3 { margin-bottom: 15px; font-weight: 600; color: #fff; }
     background-position: center;
     cursor: grab;
     z-index: 5;
-    transition: transform 0.1s ease;
+    transition: transform 0.1s ease, left 0.25s ease-in-out, top 0.25s ease-in-out;
     pointer-events: auto;
     user-select: none;
     -webkit-user-drag: none;

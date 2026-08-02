@@ -99,33 +99,77 @@ class ChessApp {
     }
 
     updateBoard() {
-        this.piecesLayer.innerHTML = '';
         const position = this.game.board();
+        const requiredPieces = [];
         
         for (let r = 0; r < 8; r++) {
             for (let f = 0; f < 8; f++) {
                 const piece = position[r][f];
                 if (piece) {
-                    const pEl = document.createElement('div');
-                    pEl.className = 'piece';
-                    const symbol = piece.color === 'w' ? piece.type.toUpperCase() : piece.type;
-                    pEl.style.backgroundImage = `url(${PIECE_URLS[symbol]})`;
-                    
-                    const sq = FILES[f] + RANKS[r];
-                    pEl.dataset.square = sq;
-                    
-                    const coords = this.getSquareCoords(sq);
-                    pEl.style.left = `${coords.file * 12.5}%`;
-                    pEl.style.top = `${coords.rank * 12.5}%`;
-                    
-                    this.piecesLayer.appendChild(pEl);
-                    
-                    // Drag events
-                    pEl.addEventListener('mousedown', (e) => this.onPieceDragStart(e, pEl));
-                    pEl.addEventListener('touchstart', (e) => this.onPieceDragStart(e, pEl), {passive: false});
+                    requiredPieces.push({
+                        type: piece.type,
+                        color: piece.color,
+                        f: f,
+                        r: r
+                    });
                 }
             }
         }
+        
+        const currentEls = Array.from(this.piecesLayer.children);
+        
+        // Pass 1: exact match
+        requiredPieces.forEach(req => {
+            const sq = FILES[req.f] + RANKS[req.r];
+            const idx = currentEls.findIndex(el => 
+                el.dataset.type === req.type && 
+                el.dataset.color === req.color &&
+                el.dataset.square === sq
+            );
+            if (idx !== -1) {
+                req.el = currentEls.splice(idx, 1)[0];
+            }
+        });
+        
+        // Pass 2: match by type/color
+        requiredPieces.forEach(req => {
+            if (!req.el) {
+                const idx = currentEls.findIndex(el => 
+                    el.dataset.type === req.type && 
+                    el.dataset.color === req.color
+                );
+                if (idx !== -1) {
+                    req.el = currentEls.splice(idx, 1)[0];
+                }
+            }
+        });
+        
+        // Remove leftovers
+        currentEls.forEach(el => el.remove());
+        
+        // Create/Update DOM
+        requiredPieces.forEach(req => {
+            const sq = FILES[req.f] + RANKS[req.r];
+            let pEl = req.el;
+            if (!pEl) {
+                pEl = document.createElement('div');
+                pEl.className = 'piece';
+                const symbol = req.color === 'w' ? req.type.toUpperCase() : req.type;
+                pEl.style.backgroundImage = `url(${PIECE_URLS[symbol]})`;
+                pEl.dataset.type = req.type;
+                pEl.dataset.color = req.color;
+                
+                this.piecesLayer.appendChild(pEl);
+                
+                pEl.addEventListener('mousedown', (e) => this.onPieceDragStart(e, pEl));
+                pEl.addEventListener('touchstart', (e) => this.onPieceDragStart(e, pEl), {passive: false});
+            }
+            
+            pEl.dataset.square = sq;
+            const coords = this.getSquareCoords(sq);
+            pEl.style.left = `${coords.file * 12.5}%`;
+            pEl.style.top = `${coords.rank * 12.5}%`;
+        });
         
         const squares = this.squaresLayer.querySelectorAll('.square');
         squares.forEach(sq => {
