@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grandmaster AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1 class="app-title">♟ Grandmaster AI</h1>
+            <div class="controls-top">
+                <button id="btn-new">New Game</button>
+                <button id="btn-flip">Flip Board</button>
+                <button id="btn-undo">Undo</button>
+            </div>
+        </header>
+        
+        <main>
+            <div class="left-panel">
+                <div class="board-container">
+                    <div id="eval-bar-container" title="Evaluation Bar">
+                        <div id="eval-bar-fill"></div>
+                    </div>
+                    <div id="board">
+                        <div id="squares-layer"></div>
+                        <svg id="arrows-svg" width="100%" height="100%"></svg>
+                        <div id="pieces-layer"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="settings-card glass-panel">
+                    <h3>⚙️ Setup & Analyze</h3>
+                    <div class="setting-row">
+                        <label>Play As:</label>
+                        <div>
+                            <input type="radio" id="play-w" name="play-as" value="w" checked> <label for="play-w" style="margin-right: 10px;">White</label>
+                            <input type="radio" id="play-b" name="play-as" value="b"> <label for="play-b">Black</label>
+                        </div>
+                    </div>
+                    <button id="btn-calculate" style="width: 100%; margin-bottom: 15px; background: var(--accent); color: #000; font-weight: bold; font-size: 1.1rem; padding: 12px; border: none; border-radius: 8px;">🚀 Calculate Best Move</button>
+                    
+                    <div class="setting-row">
+                        <label>Engine:</label>
+                        <select id="engine-select">
+                            <option value="stockfish">Stockfish 16 (Max Strength)</option>
+                            <option value="komodo">Komodo (Human-like)</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label>Style:</label>
+                        <select id="style-select">
+                            <option value="Default">Default</option>
+                            <option value="Aggressive">Aggressive</option>
+                            <option value="Defensive">Defensive</option>
+                            <option value="Active">Active</option>
+                            <option value="Positional">Positional</option>
+                            <option value="Endgame">Endgame</option>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Human">Human</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label>Board Theme:</label>
+                        <select id="theme-select">
+                            <option value="green">Classic Green</option>
+                            <option value="walnut">Premium Walnut</option>
+                            <option value="slate">Sleek Slate</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label>Arrows:</label>
+                        <input type="range" id="arrow-count" min="1" max="5" value="3">
+                        <span id="arrow-count-val">3</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Depth:</label>
+                        <input type="range" id="depth-slider" min="10" max="25" value="18">
+                        <span id="depth-val">18</span>
+                    </div>
+                    <div class="setting-row">
+                        <label>Colors:</label>
+                        <div class="color-pickers">
+                            <input type="color" id="color-1" value="#3b82f6" title="Best Move">
+                            <input type="color" id="color-2" value="#22c55e" title="2nd Best">
+                            <input type="color" id="color-3" value="#eab308" title="3rd Best">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="best-moves-card glass-panel">
+                    <div class="card-header">
+                        <h3>📊 Best Moves</h3>
+                        <span id="analysis-time">⏱️ 0.0s</span>
+                    </div>
+                    <div id="best-moves-list">
+                        <div style="color: #94a3b8; font-style: italic;">Awaiting moves...</div>
+                    </div>
+                </div>
+
+                <div class="history-card glass-panel">
+                    <div class="card-header">
+                        <h3>📜 Move History</h3>
+                    </div>
+                    <div id="move-history"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="engine.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
