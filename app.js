@@ -120,13 +120,16 @@ class ChessApp {
             }
         }
         
-        // Highlight king in check/checkmate and update square positions
         const squares = this.squaresLayer.querySelectorAll('.square');
         squares.forEach(sq => {
             const coords = this.getSquareCoords(sq.dataset.square);
             sq.style.left = `${coords.file * 12.5}%`;
             sq.style.top = `${coords.rank * 12.5}%`;
-            sq.classList.remove('in-check', 'in-checkmate');
+            sq.classList.remove('in-check', 'in-checkmate', 'selected');
+            
+            // clear old move indicators
+            const dot = sq.querySelector('.move-indicator');
+            if (dot) dot.remove();
         });
         
         if (this.game.in_check() || this.game.in_checkmate()) {
