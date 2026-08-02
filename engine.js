@@ -69,11 +69,14 @@ class Engine {
             if (s['Skill Level'] !== undefined) this.setOption('Skill Level', s['Skill Level']);
         } else if (this.currentEngine === 'komodo') {
             if (s['Personality']) this.setOption('Personality', s['Personality']);
-            this.send('setoption name UCI_LimitStrength value true');
-            let elo = 3500;
-            if (style === 'Beginner') elo = 800;
-            if (style === 'Human') elo = 1500;
-            this.send(`setoption name UCI_Elo value ${elo}`);
+            
+            if (style === 'Beginner' || style === 'Human') {
+                this.send('setoption name UCI_LimitStrength value true');
+                let elo = style === 'Beginner' ? 800 : 1500;
+                this.send(`setoption name UCI_Elo value ${elo}`);
+            } else {
+                this.send('setoption name UCI_LimitStrength value false');
+            }
         }
     }
 
